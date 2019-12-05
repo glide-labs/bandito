@@ -108,50 +108,50 @@ pub enum ModuleSystem {
     Es6,
 }
 
+fn create_dg_map<P: AsRef<Path>>(path: P) -> Result<DependencyGraph, Box<dyn Error>>{
+        // Open file in read only mode
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+
+        // Read json and define as instance DependencyGraph
+        let dg : DependencyGraph = serde_json::from_reader(reader)?;
+
+        Ok(dg)
+}
 
 
-fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<&'static String, ()>, Box<dyn Error>> {
-    let mut graph = Graph::<&'static String, ()>::new();
+fn create_graph_from_json(dg: DependencyGraph) -> Result<Graph<String, ()>, Box<dyn Error>> {
+    let mut graph = Graph::<String, ()>::new();
     // Use a set to check if node is already visited
     let mut visited = HashMap::new();
-    
-     // Open file in read only mode
-     let file = File::open(path)?;
-     let reader = BufReader::new(file);
 
-     // Read json and define as instance DependencyGraph
-     let dg : DependencyGraph = serde_json::from_reader(reader)?;
-    //  println!("{:#?}", dg.modules);
      for module in dg.modules {
-        // println!("the value is: {:#?}", module);
-        let source_str = module.source.to_string();
-
-        let source_node: NodeIndex = if !visited.contains_key(&source_str) { 
-            graph.add_node(&source_str)
+        let source_node: NodeIndex = if !visited.contains_key(&module.source) { 
+            graph.add_node(module.source.clone())
         } else {
-            visited[&source_str.to_string()]
+            visited[&module.source]
         }; 
-        if !visited.contains_key(&source_str) { 
-            visited.insert(&source_str, source_node);
+        
+        if !visited.contains_key(&module.source) { 
+            visited.insert(module.source.clone(), source_node);
         }
+
         for dependency in module.dependencies {
-            
-            let dep_str = dependency.resolved.to_string();
-            let dependency_node: NodeIndex = if !visited.contains_key(&dep_str) {
-                 graph.add_node(&dep_str)
+                
+            let dependency_node: NodeIndex = if !visited.contains_key(&dependency.resolved) {
+                graph.add_node(dependency.resolved.clone())
             } else {
-                visited[&dep_str.to_string()]
+                visited[&dependency.resolved]
             };
-            if !visited.contains_key(&dep_str) {
-                visited.insert(&dep_str, dependency_node);
+            if !visited.contains_key(&dependency.resolved) {
+                visited.insert(dependency.resolved.clone(), dependency_node);
             }
 
-            println!("{:?}", dependency_node);
-            graph.add_edge(source_node, dependency_node, ());
-        }
+        graph.add_edge(source_node, dependency_node, ());
+    }
+
      }
-     
-    Ok(graph)
+     Ok(graph)
     
 }
 
@@ -160,7 +160,10 @@ fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<&'static Stri
 // }
 
 fn main() {
-let result = create_graph_from_json("dependencies.json").unwrap();
+    let dg = create_dg_map("dependencies.json").unwrap();
+let result = create_graph_from_json(dg).unwrap();
 println!("{:?}", Dot::with_config(&result, &[Config::EdgeNoLabel]));
 
 }
+
+
