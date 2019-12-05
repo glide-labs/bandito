@@ -1,11 +1,11 @@
 use petgraph::Graph;
+use petgraph::graph::NodeIndex;
 use petgraph::dot::{Dot, Config};
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use serde_json::value::Map;
-use serde_json::value::Value;
+use std::collections::HashMap;
 
 extern crate serde;
 #[macro_use]
@@ -109,54 +109,48 @@ pub enum ModuleSystem {
 }
 
 
-// fn read_dependencies_from_json<P: AsRef<Path>>(path: P) -> Result<DependencyGraph, Box<dyn Error>> {
-//     // Open file in read only mode
-//     let file = File::open(path)?;
-//     let reader = BufReader::new(file);
 
-//     // Read json and define as instance DependencyGraph
-//     let dg = serde_json::from_reader(reader)?;
+fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<&'static String, ()>, Box<dyn Error>> {
+    let mut graph = Graph::<&'static String, ()>::new();
+    // Use a set to check if node is already visited
+    let mut visited = HashMap::new();
     
-
-//     Ok(dg)
-
-// }
-
-fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<String, ()>, Box<dyn Error>> {
-    let mut graph = Graph::<_, ()>::new();
-    // graph.add_node("A");
-    // graph.add_node("B");
-    // graph.add_node("C");
-    // graph.add_node("D");
-    // graph.extend_with_edges(&[ 
-    //     (0, 1), (0, 2), (0, 3),
-    //     (1, 2), (1, 3),
-    //     (2, 3),
-    // ]);
      // Open file in read only mode
      let file = File::open(path)?;
      let reader = BufReader::new(file);
- 
+
      // Read json and define as instance DependencyGraph
-    //  let issues = serde_json::from_str::<DependencyGraph>(&dg).unwrap();
      let dg : DependencyGraph = serde_json::from_reader(reader)?;
     //  println!("{:#?}", dg.modules);
      for module in dg.modules {
         // println!("the value is: {:#?}", module);
-        let source_node = graph.add_node(module.source);
+        let source_str = module.source.to_string();
+
+        let source_node: NodeIndex = if !visited.contains_key(&source_str) { 
+            graph.add_node(&source_str)
+        } else {
+            visited[&source_str.to_string()]
+        }; 
+        if !visited.contains_key(&source_str) { 
+            visited.insert(&source_str, source_node);
+        }
         for dependency in module.dependencies {
-            let dependency_node = graph.add_node(dependency.resolved);
-            graph.extend_with_edges(&[(source_node, dependency_node)]);
+            
+            let dep_str = dependency.resolved.to_string();
+            let dependency_node: NodeIndex = if !visited.contains_key(&dep_str) {
+                 graph.add_node(&dep_str)
+            } else {
+                visited[&dep_str.to_string()]
+            };
+            if !visited.contains_key(&dep_str) {
+                visited.insert(&dep_str, dependency_node);
+            }
+
+            println!("{:?}", dependency_node);
+            graph.add_edge(source_node, dependency_node, ());
         }
      }
      
-    // for element in &dg[0].iter() {
-    //     println!("the value is: {:#?}", element);
-    //     for e in element.iter() {
-    //         println!("HO HO HO: {:#?}", e);
-    //     }
-    // }
-
     Ok(graph)
     
 }
@@ -166,25 +160,7 @@ fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<String, ()>, 
 // }
 
 fn main() {
-//     let mut graph = Graph::<_, ()>::new();
-//     graph.add_node("A");
-//     graph.add_node("B");
-//     graph.add_node("C");
-//     graph.add_node("D");
-//     graph.extend_with_edges(&[
-//         (0, 1), (0, 2), (0, 3),
-//         (1, 2), (1, 3),
-//         (2, 3),
-//     ]);
-
-// println!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
-
-
 let result = create_graph_from_json("dependencies.json").unwrap();
-
 println!("{:?}", Dot::with_config(&result, &[Config::EdgeNoLabel]));
-
-// let dg = read_dependencies_from_json("dependencies.json").unwrap();
-// println!("{:#?}", result);
 
 }
