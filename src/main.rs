@@ -1,12 +1,14 @@
 use petgraph::Graph;
-use petgraph::dot::{Dot, Config};
+// use petgraph::dot::{Dot, Config};
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use serde_derive::{Serialize, Deserialize};
+use serde_json::value::Map;
+use serde_json::value::Value;
 
 extern crate serde;
+#[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 
@@ -107,6 +109,18 @@ pub enum ModuleSystem {
 }
 
 
+// fn read_dependencies_from_json<P: AsRef<Path>>(path: P) -> Result<DependencyGraph, Box<dyn Error>> {
+//     // Open file in read only mode
+//     let file = File::open(path)?;
+//     let reader = BufReader::new(file);
+
+//     // Read json and define as instance DependencyGraph
+//     let dg = serde_json::from_reader(reader)?;
+    
+
+//     Ok(dg)
+
+// }
 
 fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<&'static str, ()>, Box<dyn Error>> {
     let mut graph = Graph::<_, ()>::new();
@@ -124,15 +138,10 @@ fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<&'static str,
      let reader = BufReader::new(file);
  
      // Read json and define as instance DependencyGraph
-     let dg: String = serde_json::from_reader(reader).unwrap();
+     let dg : DependencyGraph = serde_json::from_reader(reader)?;
+    //  let issues = serde_json::from_str::<DependencyGraph>(&dg).unwrap();
 
-     println!("{:#?}", dg);
-    //  let issues = serde_json::from_str::<DependencyGraph>(&dg).unwrap_or(1);
-
-    //  println!("{:#?}", issues.modules);
-    // for i in issues {
-    //     println!("{:#?}", i);
-    // }
+     println!("{:#?}", dg.modules);
      
     // for element in &dg[0].iter() {
     //     println!("the value is: {:#?}", element);
@@ -150,13 +159,22 @@ fn create_graph_from_json<P: AsRef<Path>>(path: P) -> Result<Graph<&'static str,
 // }
 
 fn main() {
+//     let mut graph = Graph::<_, ()>::new();
+//     graph.add_node("A");
+//     graph.add_node("B");
+//     graph.add_node("C");
+//     graph.add_node("D");
+//     graph.extend_with_edges(&[
+//         (0, 1), (0, 2), (0, 3),
+//         (1, 2), (1, 3),
+//         (2, 3),
+//     ]);
 
 // println!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
 
-#[warn(unused_must_use)]
-create_graph_from_json("dependencies.json");
+let result = create_graph_from_json("dependencies.json");
 
 // let dg = read_dependencies_from_json("dependencies.json").unwrap();
-// println!("{:#?}", result);
+println!("{:#?}", result);
 
 }
