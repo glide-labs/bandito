@@ -1,0 +1,13 @@
+[package]
+name = "bandito"
+version = "0.1.0"
+authors = ["Tru Narla <trushithanarla@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+petgraph = "0.4.13"
+serde = "1.0.102"
+serde_derive = "1.0.102"
+serde_json = "1.0.41"
