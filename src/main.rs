@@ -147,7 +147,7 @@ fn create_graph_from_json(dg: DependencyGraph) -> Result<(Graph<String, ()>, Has
 
         for dependency in module.dependencies {
             if dependency.dynamic {
-                println!("dynamic");
+                // println!("dynamic");
                 continue;
             } 
                 
@@ -165,7 +165,7 @@ fn create_graph_from_json(dg: DependencyGraph) -> Result<(Graph<String, ()>, Has
 
     // not add edges where dynamic == true;
         graph.add_edge(source_node, dependency_node, ());
-        graph.add_edge(dependency_node, source_node, ());
+        // graph.add_edge(dependency_node, source_node, ());
     }
 
      }
